@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer
 from jose import jwt
 from sqlalchemy.orm import Session
@@ -13,6 +13,9 @@ def get_current_user(token=Depends(security), db: Session = Depends(get_db)):
         payload = jwt.decode(token.credentials, SECRET_KEY, algorithms=[ALGORITHM])
         email = payload.get("sub")
 
+        if not email:
+            raise HTTPException(status_code=401, detail="Invalid token payload")
+
         user = db.query(User).filter(User.email == email).first()
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
@@ -20,4 +23,14 @@ def get_current_user(token=Depends(security), db: Session = Depends(get_db)):
         return user
 
     except Exception:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+def require_roles(allowed_roles: list):
+    def role_checker(current_user: User = Depends(get_current_user)):
+        if current_user.role not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied. Required roles: {allowed_roles}"
+            )
+        return current_user
+    return role_checker

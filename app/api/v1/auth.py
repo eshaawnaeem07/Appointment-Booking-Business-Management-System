@@ -9,6 +9,8 @@ from app.db.session import get_db
 from app.schemas import auth as auth_schema
 from app.services import auth_service as AuthService
 from app.services.email_service import EmailService
+from app.core.dependencies import get_current_user, require_roles
+from app.utils.enums import UserRole
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -19,7 +21,8 @@ def register(user_in: auth_schema.UserCreate, db: Session = Depends(get_db)):
         return AuthService.register_user(
     db,
     email=user_in.email,
-    password=user_in.password
+    password=user_in.password,
+    role=user_in.role
 )
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -49,7 +52,7 @@ def refresh_token(token_in: auth_schema.RefreshTokenRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-# 4. Forgot Password (Generates OTP & Sends via SendGrid)
+# Forgot Password (Generates OTP & Sends via SendGrid)
 @router.post("/forgot-password")
 def forgot_password(request: auth_schema.ForgotPasswordRequest, db: Session = Depends(get_db)):
     try:
@@ -67,7 +70,7 @@ def forgot_password(request: auth_schema.ForgotPasswordRequest, db: Session = De
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-# 5. Reset Password (OTP Verification + Password Match)
+# Reset Password (OTP Verification + Password Match)
 @router.post("/reset-password")
 def reset_password(req: auth_schema.ResetPasswordRequest, db: Session = Depends(get_db)):
     try:

@@ -1,0 +1,23 @@
+from sqlalchemy import Column, Integer, ForeignKey, String, Enum, DateTime
+from sqlalchemy.orm import relationship
+from app.db.base import Base
+from app.utils.enums import PaymentStatus
+from datetime import datetime
+
+
+class Payment(Base):
+    __tablename__ = "payments"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    appointment_id = Column(Integer, ForeignKey("appointments.id"), nullable=False)
+
+    stripe_session_id = Column(String, nullable=True)
+    stripe_payment_intent = Column(String, nullable=True)
+
+    status = Column(Enum(PaymentStatus), default=PaymentStatus.PENDING)
+    amount = Column(Integer, nullable=False)  # amount in cents
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    appointment = relationship("Appointment", back_populates="payment")

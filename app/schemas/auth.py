@@ -1,9 +1,17 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 from datetime import datetime
+from app.utils.enums import UserRole
 
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
+    role: str = UserRole.USER.value
+    # @field_validator("role")
+    # @classmethod
+    # def validate_role(cls, v):
+    #     if v not in [UserRole.USER.value, UserRole.BUSINESS.value]:
+    #         raise ValueError ("Input should be 'user' or 'business'")
+    #     return v
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -24,10 +32,9 @@ class ResetPasswordRequest(BaseModel):
 class UserResponse(BaseModel):
     id: int
     email: EmailStr
-    role: str
+    role: str = UserRole.USER.value
     created_at: datetime
     
-
     class Config:
         from_attributes = True
         

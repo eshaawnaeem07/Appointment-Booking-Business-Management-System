@@ -2,19 +2,23 @@ from sqlalchemy.orm import Session
 from app.models.user import User
 from app.core.security import hash_password, verify_password, create_access_token, create_refresh_token, decode_token
 from datetime import datetime, timedelta
-import uuid
+from app.utils.enums import UserRole
 
 
-def register_user(db: Session, email: str, password: str):
-    """Check if email already exists, if not create new user with hashed password"""
+
+def register_user(db: Session, email: str, password: str, role):
     existing = db.query(User).filter(User.email == email).first()
     if existing:
         raise Exception("Email already exists")
+    if role not in [UserRole.USER.value, UserRole.BUSINESS.value]:
+         raise Exception("Input should be 'user' or 'business'")
 
     user = User(
         email=email,
-        password=hash_password(password)
+        password=hash_password(password),
+        role = role.lower()
     )
+
     db.add(user)
     db.commit()
     db.refresh(user)
