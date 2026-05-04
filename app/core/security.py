@@ -7,6 +7,8 @@ from app.core.config import (
     ACCESS_TOKEN_EXPIRE_MINUTES, 
     REFRESH_EXPIRE_DAYS
 )
+import secrets
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(password: str):
@@ -46,3 +48,20 @@ def decode_token(token: str):
         return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except jwt.ExpiredSignatureError:
         raise Exception("Token expired")
+
+def generate_refresh_token():
+    return secrets.token_hex(8)  # short like: a8f3k2p9x1
+
+def verify_refresh_token(db, token: str):
+    from app.models.user import User
+    from datetime import datetime
+
+    user = db.query(User).filter(User.refresh_token == token).first()
+
+    if not user:
+        raise Exception("Invalid refresh token")
+
+    if not user.refresh_token_expiry or user.refresh_token_expiry < datetime.utcnow():
+        raise Exception("Refresh token expired")
+
+    return user

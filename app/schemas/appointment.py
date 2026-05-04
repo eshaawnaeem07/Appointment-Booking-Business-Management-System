@@ -10,8 +10,8 @@ class AppointmentCreate(BaseModel):
 
 class AppointmentOut(BaseModel):
     id: int
-    user_id: int
-    business_id: int
+    user_id: int | None = None
+    business_id: str
     service_id: int
 
     start_time: datetime

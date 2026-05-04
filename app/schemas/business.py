@@ -1,20 +1,41 @@
 from pydantic import BaseModel
+from typing import Optional
 from datetime import datetime
+from uuid import UUID
 
-class BusinessCreate(BaseModel):
+
+class BusinessBase(BaseModel):
     name: str
-    description: str | None = None
+    description: Optional[str] = None
+
+
+class BusinessCreate(BusinessBase):
+    pass
+
 
 class BusinessUpdate(BaseModel):
-    name: str | None = None 
-    description: str | None = None
+    name: Optional[str]
+    description: Optional[str]
 
-class BusinessResponse(BaseModel):
-    id: int
+
+# class BusinessOut(BusinessBase):
+#     id: str
+
+#     class Config:
+#         from_attributes = True
+
+# class BusinessResponse(BaseModel):
+#     id: UUID
+#     name: str
+#     description: str | None
+#     owner_id: int
+#     created_at: datetime
+class BusinessOut(BaseModel):
+    id: UUID
     name: str
     description: str | None
     owner_id: int
     created_at: datetime
 
     class Config:
-        from_attributes = True 
+        from_attributes = True

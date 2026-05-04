@@ -1,89 +1,144 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from uuid import UUID
+
 from app.db.session import get_db
-from app.schemas import business as schema
-from app.services import business_service as service
-from app.core.dependencies import get_current_user
+from app.services.business_service import BusinessService
+from app.schemas.business import BusinessCreate, BusinessUpdate, BusinessOut
+from app.core.dependencies import require_roles
+from app.utils.enums import UserRole
 
-router = APIRouter(prefix="/businesses", tags=["businesses"])
+router = APIRouter(prefix="/businesses", tags=["Businesses"])
 
-# GET ALL BUSINESSES (PUBLIC)
-@router.get("/", response_model=list[schema.BusinessResponse])
-def list_businesses(db: Session = Depends(get_db)):
+# GET ALL BUSINESSES
+@router.get("/", response_model=list[BusinessOut])
+def get_all_businesses(db: Session = Depends(get_db)):
+    """
+    Retrieve all businesses (public endpoint).
+    Returns:
+        List of all businesses stored in the system.
+    """
     try:
-        return service.get_all_businesses(db)
+        service = BusinessService(db)
+        return service.get_all()
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch businesses: {str(e)}"
+        )
 
+# GET BUSINESS BY ID
+@router.get("/{id}", response_model=BusinessOut)
+def get_business(id: UUID, db: Session = Depends(get_db)):
+    """
+    Retrieve a single business by its ID.
 
-# GET BY ID (PUBLIC)
-@router.get("/{business_id}", response_model=schema.BusinessResponse)
-def get_business(business_id: int, db: Session = Depends(get_db)):
+    Args:
+        id (UUID): Business ID
+
+    Returns:
+        BusinessOut: Business details
+    """
     try:
-        business = service.get_business(db, business_id)
-        if not business:
-            raise HTTPException(status_code=404, detail="Business not found")
-        return business
+        service = BusinessService(db)
+        return service.get_by_id(id)
 
     except HTTPException:
-        raise 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise
 
-# CREATE BUSINESS (JWT + BUSINESS ROLE)
-@router.post("/", response_model=schema.BusinessResponse)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch business: {str(e)}"
+        )
+
+# CREATE BUSINESS
+@router.post("/", response_model=BusinessOut)
 def create_business(
-    data: schema.BusinessCreate,
+    data: BusinessCreate,
     db: Session = Depends(get_db),
-    user=Depends(get_current_user)
+    user=Depends(require_roles(UserRole.BUSINESS))
 ):
-    try:
-        return service.create_business(db, data, user)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    """
+    Create a new business (BUSINESS role only).
 
-# UPDATE BUSINESS (OWNER ONLY)
-@router.put("/{business_id}", response_model=schema.BusinessResponse)
+    Args:
+        data (BusinessCreate): Business creation payload
+        user: Authenticated business user
+
+    Returns:
+        BusinessOut: Created business
+    """
+    try:
+        service = BusinessService(db)
+        return service.create(user, data)
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Business creation failed: {str(e)}"
+        )
+
+# UPDATE BUSINESS
+@router.put("/{id}", response_model=BusinessOut)
 def update_business(
-    business_id: int,
-    data: schema.BusinessUpdate,
+    id: UUID,
+    data: BusinessUpdate,
     db: Session = Depends(get_db),
-    user=Depends(get_current_user)
+    user=Depends(require_roles(UserRole.BUSINESS))
 ):
+    """
+    Update an existing business (OWNER only).
+
+    Args:
+        id (UUID): Business ID
+        data (BusinessUpdate): Fields to update
+        user: Authenticated owner
+
+    Returns:
+        BusinessOut: Updated business
+    """
     try:
-        business = service.get_business(db, business_id)
-
-        if not business:
-            raise HTTPException(status_code=404, detail="Not found")
-
-        if business.owner_id != user.id:
-            raise HTTPException(status_code=403, detail="Not allowed")
-
-        return service.update_business(db, business, data)
+        service = BusinessService(db)
+        return service.update(user, id, data)
 
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
-# DELETE BUSINESS (OWNER ONLY)
-@router.delete("/{business_id}")
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Business update failed: {str(e)}"
+        )
+
+# DELETE BUSINESS (SOFT DELETE)
+@router.delete("/{id}")
 def delete_business(
-    business_id: int,
+    id: UUID,
     db: Session = Depends(get_db),
-    user=Depends(get_current_user)
+    user=Depends(require_roles(UserRole.BUSINESS))
 ):
+    """
+    Soft delete a business (OWNER only).
+    Args:
+        id (UUID): Business ID
+        user: Authenticated owner
+    Returns:
+        dict: Deletion confirmation message
+    """
     try:
-        business = service.get_business(db, business_id)
-        if not business:
-            raise HTTPException(status_code=404, detail="Not found")
-        if business.owner_id != user.id:
-            raise HTTPException(status_code=403, detail="Not allowed")
-        service.delete_business(db, business)
-        return {"message": "Business deleted successfully"}
+        service = BusinessService(db)
+        return service.delete(user, id)
 
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Business deletion failed: {str(e)}"
+        )

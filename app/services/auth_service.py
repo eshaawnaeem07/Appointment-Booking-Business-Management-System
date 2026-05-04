@@ -1,10 +1,9 @@
 from sqlalchemy.orm import Session
 from app.models.user import User
-from app.core.security import hash_password, verify_password, create_access_token, create_refresh_token, decode_token
+from app.core.security import hash_password, verify_password, create_access_token
 from datetime import datetime, timedelta
 from app.utils.enums import UserRole
-
-
+from app.core.security import generate_refresh_token
 
 def register_user(db: Session, email: str, password: str, role):
     existing = db.query(User).filter(User.email == email).first()
@@ -34,27 +33,26 @@ def login_user(db, email, password):
     "sub": user.email,
     "role": user.role
     })
-    refresh_token = create_refresh_token({"sub": user.email})
+    refresh_token = generate_refresh_token()
+    user.refresh_token = refresh_token
+    user.refresh_token_expiry = datetime.utcnow() + timedelta(days=7)
+
+    db.commit()
 
     return {
         "access_token": access_token,
         "refresh_token": refresh_token
     }
 
-def verify_refresh_token(token: str):
-    payload = decode_token(token)
-    if payload.get("type") != "refresh":
-        raise Exception("Invalid token type")
-    return payload
-
 def logout_user(db: Session, email: str):
-    """Invalidate refresh tokens by clearing them from the database"""
     user = db.query(User).filter(User.email == email).first()
+
     if not user:
         raise Exception("User not found")
 
-    user.reset_token = None
-    user.token_expiry = None
+    user.refresh_token = None
+    user.refresh_token_expiry = None
+
     db.commit()
 
 def save_otp(db: Session, user_id: int, otp: str):
