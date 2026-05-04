@@ -39,7 +39,7 @@ class EmailService:
     @staticmethod
     def send_otp_email(email: str, otp: str):
         try:
-            api_key ="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"
+            api_key = os.getenv("SENDGRID_API_KEY")
 
             if not api_key:
                 raise Exception("SENDGRID_API_KEY not found in environment")

@@ -1,17 +1,18 @@
 from pydantic import BaseModel
 from datetime import datetime
 from app.utils.enums import AppointmentStatus
-
+from uuid import UUID
 
 class AppointmentCreate(BaseModel):
     service_id: int
     start_time: datetime
+    
 
 
 class AppointmentOut(BaseModel):
     id: int
     user_id: int | None = None
-    business_id: str
+    business_id: UUID
     service_id: int
 
     start_time: datetime

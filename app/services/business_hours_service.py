@@ -2,9 +2,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from uuid import UUID
 from app.models.business_hours import BusinessHours
-from app.utils.helpers import (
-    get_business_or_404, validate_time_logic, find_hour_by_uuid
-)
+from app.utils.helpers import (get_business_or_404, validate_time_logic, find_hour_by_uuid)
 from app.utils.validators import normalize_time
 from app.utils.auth_utils import check_business_owner
 from app.utils.db_utils import commit_and_refresh

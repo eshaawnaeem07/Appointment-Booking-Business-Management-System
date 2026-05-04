@@ -1,4 +1,5 @@
 from logging.config import fileConfig
+import os
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
@@ -21,6 +22,10 @@ if config.config_file_name is not None:
 from app.db.base import Base
 
 target_metadata = Base.metadata
+
+database_url = os.getenv("SQLALCHEMY_DATABASE_URL")
+if database_url:
+    config.set_main_option("sqlalchemy.url", database_url)
 
 
 # other values from the config, defined by the needs of env.py,

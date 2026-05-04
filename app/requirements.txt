@@ -1,6 +1,7 @@
 fastapi
 uvicorn
 sqlalchemy
+alembic
 pydantic
 python-jose
 passlib[bcrypt]==1.7.4
@@ -8,5 +9,9 @@ bcrypt==3.2.2
 python-multipart
 email-validator
 python-dotenv
-celery redis
+celery
+redis
 pydantic_settings
+flower
+psycopg2-binary
+sendgrid
