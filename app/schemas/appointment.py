@@ -6,6 +6,7 @@ from uuid import UUID
 class AppointmentCreate(BaseModel):
     service_id: int
     start_time: datetime
+    walk_in_customer_id: int | None = None
     
 
 
@@ -19,6 +20,7 @@ class AppointmentOut(BaseModel):
     end_time: datetime
 
     status: AppointmentStatus
+    walk_in_customer_id: int | None = None  
 
     class Config:
         from_attributes = True
