@@ -7,10 +7,9 @@ from app.services import auth_service as AuthService
 from app.core import security
 from app.db.session import get_db
 from app.schemas import auth as auth_schema
-from app.services import auth_service as AuthService
+from app.core import security
 from app.services.email_service import EmailService
-from app.core.dependencies import get_current_user, require_roles
-from app.utils.enums import UserRole
+from app.utils.constants import FROM_EMAIL
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -41,14 +40,23 @@ def login(user_in: auth_schema.UserLogin, db: Session = Depends(get_db)):
 
 # Refresh Token
 @router.post("/refresh-token")
-def refresh_token(token_in: auth_schema.RefreshTokenRequest):
-    # Logic: Verify refresh token and issue new access token
+def refresh_token(
+    token_in: auth_schema.RefreshTokenRequest,
+    db: Session = Depends(get_db)
+):
     try:
-        payload = AuthService.verify_refresh_token(token_in.refresh_token)
-        new_access_token = security.create_token(
-            payload["sub"], timedelta(minutes=30), security.SECRET_KEY
-        )
-        return {"access_token": new_access_token, "token_type": "bearer"}
+        user = security.verify_refresh_token(db, token_in.refresh_token)
+
+        new_access_token = security.create_access_token({
+            "sub": user.email,
+            "role": user.role
+        })
+
+        return {
+            "access_token": new_access_token,
+            "token_type": "bearer"
+        }
+
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -60,15 +68,17 @@ def forgot_password(request: auth_schema.ForgotPasswordRequest, db: Session = De
         if not user:
             raise HTTPException(status_code=404, detail="Email not found")
 
-        otp = "5678"  # replace later with random OTP
+        otp = "5678"  #OTP
 
         AuthService.save_otp(db, user.id, otp)
         EmailService.send_otp_email(user.email, otp)
 
         return {"message": "OTP sent to your email"}
 
+    except HTTPException:
+         raise
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+         raise HTTPException(status_code=500, detail=str(e))
 
 # Reset Password (OTP Verification + Password Match)
 @router.post("/reset-password")

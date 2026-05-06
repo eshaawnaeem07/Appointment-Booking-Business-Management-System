@@ -6,7 +6,7 @@ class ServiceBase(BaseModel):
     description: str | None = None
     duration: int
     price: float
-    requires_advance_payment: bool = False
+    requires_deposit: bool = False
 
 
 class ServiceCreate(ServiceBase):
@@ -17,7 +17,7 @@ class ServiceUpdate(BaseModel):
     description: str | None = None
     duration: int | None = None
     price: float | None = None
-    requires_advance_payment: bool | None = None
+    requires_deposit: bool | None = None
 
 
 class ServiceOut(ServiceBase):

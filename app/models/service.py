@@ -7,18 +7,17 @@ class Service(Base):
     __tablename__ = "services"
 
     id = Column(Integer, primary_key=True, index=True)
-    business_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+
+    business_id = Column(String, ForeignKey("businesses.id"), nullable=False)
 
     name = Column(String, nullable=False)
-    description = Column(String, nullable=True)
+    description = Column(String)
 
-    duration = Column(Integer, nullable=False)  # minutes
+    duration = Column(Integer, nullable=False)
     price = Column(Float, nullable=False)
 
     requires_deposit = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
-
-    business_id = Column(Integer, ForeignKey("businesses.id"), nullable=False)
 
     business = relationship("Business", back_populates="services")
     appointments = relationship("Appointment", back_populates="service")
