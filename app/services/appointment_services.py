@@ -16,6 +16,7 @@ from app.utils.appointment_utils import (
     is_business_owner)
 from app.utils.enums import AppointmentStatus
 from app.workers.tasks import mark_no_show
+from app.utils.customer_utils import get_customer_or_404
 
 
 class AppointmentService:
@@ -61,15 +62,39 @@ class AppointmentService:
 
             if service.business.is_deleted:
                 raise HTTPException(404, "Business not found")
- 
+
+            # (future-safe check)
+            if payload.walk_in_customer_id and user.id:
+                pass
+
+            walk_in_customer_id = None
+
+            if payload.walk_in_customer_id:
+                customer = get_customer_or_404(
+                    db,
+                    service.business_id,
+                    payload.walk_in_customer_id,
+                    user
+                )
+                walk_in_customer_id = customer.id
+
+
             start_time = payload.start_time
             end_time = start_time + timedelta(minutes=service.duration)
 
             ensure_business_is_open(db, service, start_time, end_time)
             ensure_slot_available(db, service, start_time, end_time)
 
+            user_id = user.id
+            walk_in_customer = None
+
+            if payload.walk_in_customer_id:
+                user_id = None
+                walk_in_customer = walk_in_customer_id
+
             appointment = Appointment(
-                user_id=user.id,
+                user_id=user_id,
+                walk_in_customer_id=walk_in_customer, 
                 business_id=service.business_id,
                 service_id=service.id,
                 start_time=start_time,
@@ -80,12 +105,14 @@ class AppointmentService:
             db.add(appointment)
             db.commit()
             db.refresh(appointment)
-
-            if not service.requires_deposit:
-                mark_no_show.apply_async(
-                    args=[appointment.id],
-                    countdown=4 * 60 * 60,
-                )
+            try:
+                if not service.requires_deposit:
+                    mark_no_show.apply_async(
+                        args=[appointment.id],
+                        countdown=4 * 60 * 60,
+                    )
+            except Exception as e:
+                print(f"Failed to schedule no-show task: {e}")
 
             return appointment
 
@@ -95,7 +122,6 @@ class AppointmentService:
         except Exception:
             db.rollback()
             raise HTTPException(500, "Failed to book appointment")
-
     @staticmethod
     def confirm_appointment(db: Session, appointment_id, user):
         try:

@@ -28,3 +28,5 @@ class Business(Base):
     hours = relationship("BusinessHours", back_populates="business", cascade="all, delete-orphan")
 
     appointments = relationship("Appointment", back_populates="business") 
+
+    customers = relationship("BusinessCustomer", back_populates="business")
