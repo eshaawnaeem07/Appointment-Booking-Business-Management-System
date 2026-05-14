@@ -36,7 +36,7 @@ class ServiceService:
             # auth check
             check_business_owner(business, user_id)
 
-            # uplicate check
+            # Duplicate check
             existing = db.query(Service).filter(
                 Service.business_id == business_id,
                 Service.name == payload.name
