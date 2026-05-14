@@ -1,6 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.schemas.appointment import AppointmentCreate, AppointmentOut
+from app.schemas.appointment import (
+    AppointmentCreate,
+    AppointmentUpdate,
+    AppointmentOut
+)
 from app.db.session import get_db
 from app.services.appointment_services import AppointmentService
 from app.core.dependencies import get_current_user
@@ -53,6 +57,31 @@ def book_appointment(
             status_code=500,
             detail=f"Failed to book appointment: {str(e)}"
         )
+# Update appointment (reschedule)
+@router.patch("/appointments/{id}", response_model=AppointmentOut)
+def update_appointment(
+    id: int,
+    payload: AppointmentUpdate,
+    db: Session = Depends(get_db),
+    user = Depends(get_current_user)
+):
+    try:
+        return AppointmentService.update_appointment(
+            db,
+            id,
+            user,
+            payload
+        )
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to update appointment: {str(e)}"
+        )
+    
 @router.patch("/appointments/{id}/confirm", response_model=AppointmentOut)
 def confirm(id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
     try:

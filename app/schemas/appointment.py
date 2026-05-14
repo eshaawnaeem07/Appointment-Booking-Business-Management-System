@@ -7,9 +7,10 @@ class AppointmentCreate(BaseModel):
     service_id: int
     start_time: datetime
     walk_in_customer_id: int | None = None
+
+class AppointmentUpdate(BaseModel):
+    start_time: datetime
     
-
-
 class AppointmentOut(BaseModel):
     id: int
     user_id: int | None = None

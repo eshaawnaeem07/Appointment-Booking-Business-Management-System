@@ -8,10 +8,10 @@ from app.api.v1.business_hours import router as business_hours_router
 from app.api.v1.services import router as services_router
 from app.api.v1.appointments import router as appointment_router
 from app.api.v1.business_customers import router as customers_router
+from app.api.v1.payments import router as payments_router
 
 from app.db.base import Base
 from app.db.session import engine
-
 from app.models import user, business, appointment, business_hours, payment, service
 
 # Create tables
@@ -44,6 +44,7 @@ app.include_router(business_hours_router)
 app.include_router(services_router)
 app.include_router(appointment_router)
 app.include_router(customers_router)
+app.include_router(payments_router)
 
 # @app.get("/")
 # def health():

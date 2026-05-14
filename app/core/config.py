@@ -6,6 +6,9 @@ class Settings(BaseSettings):
     SQLALCHEMY_DATABASE_URL: str
     FROM_EMAIL: str
     REDIS_URL: str = "redis://localhost:6379/0"
+    STRIPE_PUBLISHABLE_KEY: str = ""
+    STRIPE_SECRET_KEY: str = ""
+    STRIPE_WEBHOOK_SECRET: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

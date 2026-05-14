@@ -1,7 +1,8 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, model_validator
 from typing import Optional, List
 from uuid import UUID
 from app.utils.enums import DayEnum
+from datetime import time
 
 # SINGLE HOUR SCHEMA
 class BusinessHourBase(BaseModel):
@@ -34,22 +35,6 @@ class BusinessHourBase(BaseModel):
                 return mapping[v]
         return v
 
-    # @field_validator("open_time", "close_time")
-    # @classmethod
-    # def normalize_time(cls, v):
-    #     if v is None:
-    #         return v
-
-    #     v = str(v)
-
-    #     if v.isdigit():
-    #         return f"{int(v):02d}:00:00"
-
-    #     parts = v.split(":")
-    #     if len(parts) == 2:
-    #         return f"{v}:00"
-
-    #     return v
     @field_validator("open_time", "close_time")
     @classmethod
     def normalize_time(cls, v):
@@ -69,6 +54,15 @@ class BusinessHourBase(BaseModel):
             return v
 
         raise ValueError("Invalid time format")
+    @model_validator(mode="after")
+    def validate_business_hours(self):
+        if self.is_open:
+            if not self.open_time or not self.close_time:
+                raise ValueError(
+                    "Open and close times are required when business is open"
+                )
+
+        return self
 
 
 # CREATE 
@@ -79,8 +73,8 @@ class BusinessHourCreate(BusinessHourBase):
 class BusinessHourUpdate(BaseModel):
     day_of_week: Optional[DayEnum] = None
     is_open: Optional[bool] = None
-    open_time: Optional[str] = None
-    close_time: Optional[str] = None
+    open_time: Optional[time] = None
+    close_time: Optional[time] = None
 
 # RESPONSE
 class BusinessHourOut(BaseModel):

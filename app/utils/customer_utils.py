@@ -13,3 +13,15 @@ def get_customer_or_404(db, business_id, customer_id, user):
         raise HTTPException(status_code=404, detail="Customer not found")
 
     return customer
+
+# Utility function to get customer email for payment processing
+def get_customer_email(user, appointment):
+    email = (
+        user.email
+        or (appointment.walk_in_customer.email if appointment.walk_in_customer else None)
+    )
+
+    if not email:
+        raise HTTPException(400, "Customer email not found")
+
+    return email

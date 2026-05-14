@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, UTC
 from uuid import UUID
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
@@ -103,3 +103,18 @@ def ensure_slot_available(
 
     if conflict:
         raise HTTPException(400, "Time slot already booked")
+    
+# Ensure appointment is not booked in the past
+def ensure_future_appointment(start_time: datetime):
+
+    # Convert datetime to UTC
+    if start_time.tzinfo is None:
+        start_time = start_time.replace(tzinfo=UTC)
+
+    current_time = datetime.now(UTC)
+
+    if start_time < current_time:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot book appointment of the past. Please select a future time."
+        )

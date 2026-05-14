@@ -13,7 +13,7 @@ from app.utils.appointment_utils import (
     ensure_slot_available,
     ensure_user_owns_appointment,
     get_appointment_or_404,
-    is_business_owner)
+    is_business_owner,ensure_future_appointment)
 from app.utils.enums import AppointmentStatus
 from app.workers.tasks import mark_no_show
 from app.utils.customer_utils import get_customer_or_404
@@ -82,6 +82,8 @@ class AppointmentService:
             start_time = payload.start_time
             end_time = start_time + timedelta(minutes=service.duration)
 
+            ensure_future_appointment(start_time)
+
             ensure_business_is_open(db, service, start_time, end_time)
             ensure_slot_available(db, service, start_time, end_time)
 
@@ -122,6 +124,65 @@ class AppointmentService:
         except Exception:
             db.rollback()
             raise HTTPException(500, "Failed to book appointment")
+    
+    @staticmethod
+    def update_appointment(db: Session, appointment_id, user, payload):
+        try:
+            appointment = get_appointment_or_404(db, appointment_id)
+
+            # Ensure user owns appointment
+            ensure_user_owns_appointment(appointment, user)
+
+            # Prevent updating completed appointments
+            ensure_appointment_not_completed(appointment)
+
+            service = appointment.service
+
+            new_start_time = payload.start_time
+            new_end_time = new_start_time + timedelta(minutes=service.duration)
+
+            # Prevent past booking
+            ensure_future_appointment(new_start_time)
+
+            # Business hours validation
+            ensure_business_is_open(
+                db,
+                service,
+                new_start_time,
+                new_end_time
+            )
+
+            # Check conflicting appointments
+            conflict = db.query(Appointment).filter(
+                Appointment.business_id == service.business_id,
+                Appointment.id != appointment.id,
+                Appointment.start_time < new_end_time,
+                Appointment.end_time > new_start_time,
+                Appointment.status.in_([
+                    AppointmentStatus.PENDING.value,
+                    AppointmentStatus.CONFIRMED.value,
+                ])
+            ).first()
+
+            if conflict:
+                raise HTTPException(400, "Time slot already booked")
+
+            # Update appointment
+            appointment.start_time = new_start_time
+            appointment.end_time = new_end_time
+
+            db.commit()
+            db.refresh(appointment)
+
+            return appointment
+
+        except HTTPException:
+            db.rollback()
+            raise
+
+        except Exception:
+            db.rollback()
+            raise HTTPException(500, "Failed to update appointment")
     @staticmethod
     def confirm_appointment(db: Session, appointment_id, user):
         try:
