@@ -16,9 +16,9 @@ class CustomerUpdate(BaseModel):
     email: str | None = None
 
 class CustomerOut(CustomerBase):
-    id: int
+    id: UUID
     business_id: UUID
-    user_id: int | None = None
+    user_id: UUID | None = None
     created_at: datetime
 
     class Config:

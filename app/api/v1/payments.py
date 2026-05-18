@@ -9,6 +9,7 @@ from app.schemas.payment import (
     CheckoutSessionResponse
 )
 from app.services.payment_service import PaymentService
+from uuid import UUID
 
 router = APIRouter(prefix="/payments", tags=["Payments"])
 
@@ -25,7 +26,7 @@ def create_checkout_session(
     db: Session = Depends(get_db),
     user = Depends(get_current_user),
     success_url: str = "http://localhost:3000/payment-success",
-    cancel_url: str = "http://localhost:3000/payment-cancel"
+    # cancel_url: str = "http://localhost:3000/payment-cancel"
 ):
     """
     Create Stripe checkout session for deposit
@@ -47,8 +48,7 @@ def create_checkout_session(
             db,
             user,
             payload.appointment_id,
-            success_url,
-            cancel_url
+            success_url
         )
     except HTTPException:
         raise
@@ -66,19 +66,10 @@ def create_checkout_session(
     description="Get payment record details for a specific appointment. Requires JWT authentication."
 )
 def get_payment(
-    appointment_id: int,
+    appointment_id: UUID,
     db: Session = Depends(get_db),
     user = Depends(get_current_user)
 ):
-    """
-    Get payment record for an appointment
-    
-    Parameters:
-    - appointment_id: ID of the appointment
-    
-    Returns:
-    - Payment object with all details including status, amount, and Stripe IDs
-    """
     try:
         return PaymentService.get_payment_by_appointment(db, user, appointment_id)
     except HTTPException:
@@ -101,17 +92,6 @@ def get_payment_status(
     db: Session = Depends(get_db),
     user = Depends(get_current_user)
 ):
-    """
-    Get current payment status for an appointment
-    
-    Parameters:
-    - appointment_id: ID of the appointment
-    
-    Returns:
-    - Payment status (pending, paid, failed)
-    - Amount in cents
-    - Created and updated timestamps
-    """
     try:
         return PaymentService.get_payment_status(db, user, appointment_id)
     except HTTPException:
@@ -132,19 +112,6 @@ async def stripe_webhook(
     request: Request,
     db: Session = Depends(get_db)
 ):
-    """
-    Stripe webhook endpoint
-    
-    Handles Stripe events:
-    - checkout.session.completed: Payment successful
-    - checkout.session.async_payment_succeeded: Async payment succeeded
-    - checkout.session.async_payment_failed: Async payment failed
-    
-    Updates:
-    - Payment status in database
-    - Appointment status to CONFIRMED if payment successful
-    - Sends confirmation email to customer
-    """
     try:
         # Get payload and signature
         payload = await request.body()
@@ -178,36 +145,3 @@ async def stripe_webhook(
             detail=f"Webhook processing failed: {str(e)}"
         )
 
-
-# @router.post(
-#     "/{payment_id}/sync",
-#     summary="Manually sync payment status from Stripe",
-#     description="Manually sync payment status from Stripe. Useful for testing and recovering missed webhooks. Requires JWT authentication."
-# )
-# def sync_payment_status(
-#     payment_id: int,
-#     db: Session = Depends(get_db),
-#     user = Depends(get_current_user)
-# ):
-#     """
-#     Manually sync payment status from Stripe
-    
-#     This endpoint checks the actual payment status at Stripe and updates your database.
-#     Use this if payment remains "pending" after Stripe shows it as "paid".
-    
-#     Parameters:
-#     - payment_id: ID of the payment record
-    
-#     Returns:
-#     - Updated payment status
-#     - Message with result
-#     """
-#     try:
-#         return PaymentService.sync_payment_status_from_stripe(db, payment_id)
-#     except HTTPException:
-#         raise
-#     except Exception as e:
-#         raise HTTPException(
-#             status_code=500,
-#             detail=f"Failed to sync payment: {str(e)}"
-#         )

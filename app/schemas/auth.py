@@ -30,7 +30,7 @@ class ResetPasswordRequest(BaseModel):
     confirm_password: str
 
 class UserResponse(BaseModel):
-    id: int
+    id: str
     email: EmailStr
     role: str = UserRole.USER.value
     created_at: datetime

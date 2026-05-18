@@ -8,6 +8,7 @@ from app.schemas.appointment import (
 from app.db.session import get_db
 from app.services.appointment_services import AppointmentService
 from app.core.dependencies import get_current_user
+from uuid import UUID
 
 router = APIRouter(tags=["Appointments"])
 # Get my appointments
@@ -27,7 +28,7 @@ def get_my_appointments(
         )
 # Get appointment by ID
 @router.get("/appointments/{id}", response_model=AppointmentOut)
-def get_appointment(id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def get_appointment(id: UUID, db: Session = Depends(get_db), user=Depends(get_current_user)):
     try:
         return AppointmentService.get_by_id(db, id, user)
     except HTTPException:
@@ -60,7 +61,7 @@ def book_appointment(
 # Update appointment (reschedule)
 @router.patch("/appointments/{id}", response_model=AppointmentOut)
 def update_appointment(
-    id: int,
+    id: UUID,
     payload: AppointmentUpdate,
     db: Session = Depends(get_db),
     user = Depends(get_current_user)
@@ -83,7 +84,7 @@ def update_appointment(
         )
     
 @router.patch("/appointments/{id}/confirm", response_model=AppointmentOut)
-def confirm(id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def confirm(id: UUID, db: Session = Depends(get_db), user=Depends(get_current_user)):
     try:
         return AppointmentService.confirm_appointment(db, id, user)
     except HTTPException:
@@ -95,7 +96,7 @@ def confirm(id: int, db: Session = Depends(get_db), user=Depends(get_current_use
         )
 
 @router.patch("/appointments/{id}/complete", response_model=AppointmentOut)
-def complete(id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def complete(id: UUID, db: Session = Depends(get_db), user=Depends(get_current_user)):
     try:
         return AppointmentService.complete_appointment(db, id, user)
     except HTTPException:
@@ -107,7 +108,7 @@ def complete(id: int, db: Session = Depends(get_db), user=Depends(get_current_us
         )
 
 @router.patch("/appointments/{id}/no-show", response_model=AppointmentOut)
-def no_show(id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def no_show(id: UUID, db: Session = Depends(get_db), user=Depends(get_current_user)):
     try:
         return AppointmentService.mark_no_show_manual(db, id, user)
     except HTTPException:
@@ -119,7 +120,7 @@ def no_show(id: int, db: Session = Depends(get_db), user=Depends(get_current_use
         )
 
 @router.get("/businesses/{id}/appointments", response_model=list[AppointmentOut])
-def business_appointments(id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def business_appointments(id: UUID, db: Session = Depends(get_db), user=Depends(get_current_user)):
     try:
         return AppointmentService.get_business_appointments(db, id, user)
     except HTTPException:

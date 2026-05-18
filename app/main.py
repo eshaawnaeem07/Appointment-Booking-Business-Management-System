@@ -59,7 +59,26 @@ app.include_router(payments_router)
 #     }
 @app.get("/test-task")
 def test_task():
+    """Test endpoint - verifies Celery is working. Real tasks are created when appointments are booked."""
     from app.workers.tasks import mark_no_show
-
-    mark_no_show.delay(1)
-    return {"message": "Task sent"}
+    from app.workers.celery_app import celery_app
+    
+    try:
+        # Queue a test task (won't find appointment, but verifies queuing works)
+        task = mark_no_show.apply_async(
+            args=["00000000-0000-0000-0000-000000000000"],
+            countdown=5  # 5 seconds delay for quick testing
+        )
+        
+        return {
+            "status": "✓ CELERY WORKING",
+            "message": "Test task queued successfully",
+            "task_id": task.id,
+            "note": "Real appointment tasks are created when appointments are booked"
+        }
+    except Exception as e:
+        return {
+            "status": "✗ CELERY ERROR",
+            "error": str(e),
+            "message": "Failed to queue task - check if Redis and Celery worker are running"
+        }

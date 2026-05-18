@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from uuid import UUID
 
 
 class ServiceBase(BaseModel):
@@ -21,7 +22,9 @@ class ServiceUpdate(BaseModel):
 
 
 class ServiceOut(ServiceBase):
-    id: int
+    id: UUID
+    business_id: UUID
+
 
     class Config:
         from_attributes = True

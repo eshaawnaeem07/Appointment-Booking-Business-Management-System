@@ -10,7 +10,9 @@ from sendgrid.helpers.mail import Mail
 BASE_DIR = Path(__file__).resolve().parents[2]
 load_dotenv(BASE_DIR / ".env", override=True)
 
-
+print(f"Loading .env from: {BASE_DIR / '.env'}")
+print(f"SENDGRID_API_KEY exists: {bool(os.getenv('SENDGRID_API_KEY'))}")
+print(f"FROM_EMAIL: {os.getenv('FROM_EMAIL')}")
 class EmailService:
     @staticmethod
     def send_otp_email(email: str, otp: str):
@@ -44,6 +46,7 @@ class EmailService:
         except Exception as e:
             print("EMAIL ERROR:", str(e))
             raise HTTPException(status_code=500, detail=f"Email failed: {str(e)}")
+
 
     @staticmethod
     def send_payment_confirmation_email(email: str, service_name: str, appointment_time):

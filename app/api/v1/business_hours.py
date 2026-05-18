@@ -37,16 +37,27 @@ def set_hours(
 # UPDATE SPECIFIC HOUR
 @router.put("/{id}/hours/{hour_id}")
 def update_hour(
-    id: UUID,  
-    hour_id: str,
+    id: UUID,
+    hour_id: UUID,
     data: BusinessHourUpdate,
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
     _: bool = Depends(require_roles(UserRole.BUSINESS))
 ):
     try:
-        return BusinessHoursService.update_hour(db, id, hour_id, data, user.id)
+        return BusinessHoursService.update_hour(
+            db,
+            id,
+            hour_id,
+            data,
+            user.id
+        )
+
     except HTTPException as e:
         raise e
+
     except Exception:
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal Server Error"
+        )

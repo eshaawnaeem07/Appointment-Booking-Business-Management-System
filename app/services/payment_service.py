@@ -13,6 +13,7 @@ from app.utils.payment_utils import (
 )
 from app.utils.stripe_utils import create_stripe_checkout_session
 from app.utils.customer_utils import get_customer_email
+from uuid import UUID
 
 # Initialize Stripe
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -20,7 +21,7 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 
 class PaymentService:
     @staticmethod
-    def create_checkout_session(db: Session, user, appointment_id: int, success_url: str, cancel_url: str):
+    def create_checkout_session(db: Session, user, appointment_id: UUID, success_url: str, cancel_url: str):
         try:
             # Verify appointment exists
             appointment = get_appointment_or_404(db, appointment_id)
@@ -95,7 +96,7 @@ class PaymentService:
             raise HTTPException(500, f"Failed to create checkout session: {str(e)}")
 
     @staticmethod
-    def get_payment_by_appointment(db: Session, user, appointment_id: int):
+    def get_payment_by_appointment(db: Session, user, appointment_id: UUID):
         try:
             # Verify appointment exists and user can access
             appointment = get_appointment_or_404(db, appointment_id)
@@ -115,7 +116,7 @@ class PaymentService:
             raise HTTPException(500, f"Failed to fetch payment: {str(e)}")
 
     @staticmethod
-    def db_get_payment_status(db: Session, user, appointment_id: int):
+    def db_get_payment_status(db: Session, user, appointment_id: UUID):
         try:
             # Verify appointment exists and user can access
             appointment = get_appointment_or_404(db, appointment_id)
