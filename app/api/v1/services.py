@@ -5,11 +5,12 @@ from app.schemas.service import ServiceCreate, ServiceUpdate, ServiceOut
 from app.services.booking_service import ServiceService
 from app.core.dependencies import get_current_user, require_roles
 from app.utils.enums import UserRole
+from uuid import UUID
 
 router = APIRouter(prefix="/services", tags=["Services"])
 
 @router.get("/businesses/{business_id}/services", response_model=list[ServiceOut])
-def get_business_services(business_id: str, db: Session = Depends(get_db)):
+def get_business_services(business_id: UUID, db: Session = Depends(get_db)):
     try:
         return ServiceService.get_by_business(db, business_id)
 
@@ -20,7 +21,7 @@ def get_business_services(business_id: str, db: Session = Depends(get_db)):
         )
 
 @router.get("/services/{service_id}", response_model=ServiceOut)
-def get_service(service_id: int, db: Session = Depends(get_db)):
+def get_service(service_id: UUID, db: Session = Depends(get_db)):
     try:
         service = ServiceService.get_by_id(db, service_id)
 
@@ -45,7 +46,7 @@ def get_service(service_id: int, db: Session = Depends(get_db)):
     dependencies=[Depends(require_roles(UserRole.BUSINESS))]
 )
 def create_service(
-    business_id: str,
+    business_id: UUID,
     payload: ServiceCreate,
     db: Session = Depends(get_db),
     user=Depends(get_current_user)
@@ -63,7 +64,7 @@ def create_service(
 
 @router.put("/services/{service_id}", response_model=ServiceOut)
 def update_service(
-    service_id: int,
+    service_id: UUID,
     payload: ServiceUpdate,
     db: Session = Depends(get_db),
     user=Depends(get_current_user)
@@ -83,7 +84,7 @@ def update_service(
 
 @router.delete("/services/{service_id}")
 def delete_service(
-    service_id: int,
+    service_id: UUID,
     db: Session = Depends(get_db),
     user=Depends(get_current_user)
 ):

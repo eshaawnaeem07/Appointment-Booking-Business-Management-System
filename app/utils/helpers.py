@@ -1,14 +1,24 @@
 from fastapi import HTTPException
 from app.models.business import Business
-import uuid
+from uuid import UUID, uuid5, NAMESPACE_DNS
 from app.utils.constants import DAY_MAP, DAYS_LIST
 
 
-def get_business_or_404(db, business_id):
+def get_business_or_404(db, business_id: UUID):
     """Finds a business or raises 404."""
-    business = db.query(Business).filter(Business.id == str(business_id)).first()
+    
+    business = (
+        db.query(Business)
+        .filter(Business.id == business_id)
+        .first()
+    )
+
     if not business:
-        raise HTTPException(status_code=404, detail="Business not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Business not found"
+        )
+
     return business
 
 def validate_time_logic(open_t, close_t, day_name: str = "this day"):
@@ -24,12 +34,11 @@ def format_time_str(t):
     return t.strftime("%H:%M:%S") if t else None
 
 def to_response_id(db_id):
-    """Generates the pseudo-UUID for the response."""
-    return uuid.uuid5(uuid.NAMESPACE_DNS, str(db_id))
+    return uuid5(NAMESPACE_DNS, str(db_id))
 
-def find_hour_by_uuid(hours_list, target_uuid_str):
+def find_hour_by_uuid(hours_list, target_uuid: UUID):
     for h in hours_list:
         # Generate the pseudo-UUID from the DB integer and compare to the string from the URL
-        if str(to_response_id(h.id)) == str(target_uuid_str):
+        if to_response_id(h.id) == target_uuid:
             return h
     return None

@@ -34,7 +34,7 @@ class BusinessOut(BaseModel):
     id: UUID
     name: str
     description: str | None
-    owner_id: int
+    owner_id: UUID
     created_at: datetime
 
     class Config:

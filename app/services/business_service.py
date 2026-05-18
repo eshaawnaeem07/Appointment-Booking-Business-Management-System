@@ -7,7 +7,7 @@ from datetime import datetime
 from app.utils.auth_utils import check_business_owner
 from app.utils.db_utils import commit_and_refresh
 from app.utils.helpers import get_business_or_404
-
+from uuid import UUID
 
 class BusinessService:
     def __init__(self, db: Session):
@@ -21,7 +21,7 @@ class BusinessService:
             raise HTTPException(status_code=500, detail=f"Failed to fetch businesses: {str(e)}")
 
     # GET BY ID
-    def get_by_id(self, business_id: str):
+    def get_by_id(self, business_id: UUID):
         try:
             return get_business_or_404(self.db, business_id)
 
@@ -61,7 +61,7 @@ class BusinessService:
             raise HTTPException(status_code=500, detail=f"Business creation failed: {str(e)}")
 
     # UPDATE
-    def update(self, user: User, business_id: str, data: BusinessUpdate):
+    def update(self, user: User, business_id: UUID, data: BusinessUpdate):
         try:
             business = self.get_by_id(business_id)
 
@@ -82,7 +82,7 @@ class BusinessService:
             raise HTTPException(status_code=500, detail=f"Business update failed: {str(e)}")
 
     # SOFT DELETE
-    def delete(self, user: User, business_id: str):
+    def delete(self, user: User, business_id: UUID):
         try:
             business = self.get_by_id(business_id)
             # USING AUTH UTILS

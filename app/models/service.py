@@ -1,14 +1,18 @@
 from sqlalchemy import Boolean, Column, Integer, String, Float, ForeignKey
 from sqlalchemy.orm import relationship
 from app.db.base import Base
-
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.sql import text
+import uuid
 
 class Service(Base):
     __tablename__ = "services"
 
-    id = Column(Integer, primary_key=True, index=True)
+    # id = Column(Integer, primary_key=True, index=True)
+    id = Column(UUID(as_uuid=True),primary_key=True,index=True,default=uuid.uuid4)
 
-    business_id = Column(String, ForeignKey("businesses.id"), nullable=False)
+    # business_id = Column(String, ForeignKey("businesses.id"), nullable=False)
+    business_id = Column(UUID(as_uuid=True), ForeignKey("businesses.id"), nullable=False)
 
     name = Column(String, nullable=False)
     description = Column(String)

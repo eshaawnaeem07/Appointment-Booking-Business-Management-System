@@ -17,6 +17,7 @@ from app.utils.appointment_utils import (
 from app.utils.enums import AppointmentStatus
 from app.workers.tasks import mark_no_show
 from app.utils.customer_utils import get_customer_or_404
+from uuid import UUID
 
 
 class AppointmentService:
@@ -107,14 +108,19 @@ class AppointmentService:
             db.add(appointment)
             db.commit()
             db.refresh(appointment)
+            
+            # Schedule task to mark appointment as no-show after 4 hours if not confirmed
+            # This applies to ALL appointments regardless of deposit requirement
             try:
-                if not service.requires_deposit:
-                    mark_no_show.apply_async(
-                        args=[appointment.id],
-                        countdown=4 * 60 * 60,
-                    )
+                task = mark_no_show.apply_async(
+                    args=[str(appointment.id)],
+                    countdown=4 * 60 * 60,  # 4 hours in seconds
+                )
+                print(f"[✓ CELERY SUCCESS] Task scheduled - Task ID: {task.id}, Appointment ID: {appointment.id}")
             except Exception as e:
-                print(f"Failed to schedule no-show task: {e}")
+                print(f"[✗ CELERY ERROR] Failed to schedule task: {type(e).__name__}: {e}")
+                import traceback
+                traceback.print_exc()
 
             return appointment
 
@@ -249,10 +255,11 @@ class AppointmentService:
             raise HTTPException(500, "Failed to mark appointment as no-show")
 
     @staticmethod
-    def get_business_appointments(db: Session, business_id, user):
+    
+    def get_business_appointments(db: Session, business_id: UUID, user: UUID):
         try:
             business = db.query(Business).filter(
-                Business.id == str(business_id),
+                Business.id == business_id,
                 Business.owner_id == user.id
             ).first()
 
@@ -260,7 +267,7 @@ class AppointmentService:
                 raise HTTPException(403, "Not allowed")
 
             return db.query(Appointment).filter(
-                Appointment.business_id == str(business_id)
+               Appointment.business_id == business_id
             ).all()
 
         except HTTPException:

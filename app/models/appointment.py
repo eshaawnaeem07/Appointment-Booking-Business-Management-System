@@ -3,26 +3,30 @@ from sqlalchemy.orm import relationship
 from app.db.base import Base
 from app.utils.enums import AppointmentStatus
 from datetime import datetime
-
+from sqlalchemy.dialects.postgresql import UUID
+import uuid
 
 class Appointment(Base):
     __tablename__ = "appointments"
 
-    id = Column(Integer, primary_key=True)
-
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    business_id = Column(String, ForeignKey("businesses.id"))
-    service_id = Column(Integer, ForeignKey("services.id"))
+    # id = Column(Integer, primary_key=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    # business_id = Column(String, ForeignKey("businesses.id"))
+    business_id = Column(UUID(as_uuid=True), ForeignKey("businesses.id"))
+    service_id = Column(UUID(as_uuid=True),ForeignKey("services.id"),nullable=False)
     
-    walk_in_customer_id = Column(Integer, ForeignKey("business_customers.id"), nullable=True)
+    # walk_in_customer_id = Column(Integer, ForeignKey("business_customers.id"), nullable=True)
+    walk_in_customer_id = Column(UUID(as_uuid=True),ForeignKey("business_customers.id"),nullable=True)
 
     start_time = Column(DateTime)
     end_time = Column(DateTime)
 
-    status = Column(String)
+    status = Column(Enum(AppointmentStatus),default=AppointmentStatus.PENDING,nullable=False)
 
     created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime,default=datetime.utcnow,onupdate=datetime.utcnow)
+
 
     user = relationship("User", back_populates="appointments")
     business = relationship("Business", back_populates="appointments")
